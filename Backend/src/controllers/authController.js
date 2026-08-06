@@ -9,12 +9,11 @@ const generateToken = (id) => {
   });
 };
 
-
 const register = async (req, res) => {
   try {
     const { name, email, password, role, phone, specialization, fees, experienceYears } = req.body;
 
-    // 1. Check if user exists
+    // 1. Check if user exists in core User collection
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists with this email' });
@@ -33,9 +32,10 @@ const register = async (req, res) => {
       phone,
     });
 
- 
+    // 4. Create Doctor Profile if role is doctor
+    let doctorProfile = null;
     if (user.role === 'doctor') {
-      await DoctorProfile.create({
+      doctorProfile = await DoctorProfile.create({
         user: user._id,
         specialization: specialization || 'General Physician',
         fees: fees || 500,
@@ -43,7 +43,7 @@ const register = async (req, res) => {
       });
     }
 
-    // 5. Respond with Token
+    // 5. Generate Token and Respond
     const token = generateToken(user._id);
 
     res.status(201).json({
@@ -53,6 +53,7 @@ const register = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        doctorProfile: doctorProfile ? doctorProfile._id : null,
         token,
       },
     });
@@ -75,8 +76,12 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    
     const token = generateToken(user._id);
+
+    let doctorProfile = null;
+    if (user.role === 'doctor') {
+      doctorProfile = await DoctorProfile.findOne({ user: user._id });
+    }
 
     res.status(200).json({
       success: true,
@@ -85,6 +90,7 @@ const login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        doctorProfile: doctorProfile ? doctorProfile._id : null,
         token,
       },
     });
