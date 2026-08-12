@@ -10,10 +10,14 @@ export default function DoctorSlots() {
   
   const [slots, setSlots] = useState([]);
   const [doctorInfo, setDoctorInfo] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState('');
 
   useEffect(() => {
-    fetchSlots();
+    if (selectedDate) fetchSlots();
+  }, [doctorId, selectedDate]);
+
+  useEffect(() => {
     fetchDoctorInfo();
   }, [doctorId]);
 
@@ -31,13 +35,8 @@ export default function DoctorSlots() {
 
   const fetchSlots = async () => {
     try {
-      const dateObj = new Date();
-      const year = dateObj.getFullYear();
-      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const day = String(dateObj.getDate()).padStart(2, '0');
-      const today = `${year}-${month}-${day}`;
-      
-      const res = await api.get(`/appointments/available-slots/${doctorId}?date=${today}`);
+      setLoading(true);
+      const res = await api.get(`/appointments/available-slots/${doctorId}?date=${selectedDate}`);
       setSlots(res.data.data);
     } catch (error) {
       console.error('Error fetching slots:', error);
@@ -64,37 +63,46 @@ export default function DoctorSlots() {
   };
 
   const initiateRazorpayPayment = async (appointmentId, amount) => {
-    const options = {
-      key: 'rzp_test_TOlHjo5HTdStDQ',
-      amount: amount * 100,
-      currency: 'INR',
-      name: 'MediSlot Hospital',
-      description: 'Appointment Booking',
-      handler: async function (response) {
-        try {
-          await api.post('/payments/verify', {
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_signature: response.razorpay_signature,
-            appointmentId
-          });
-          navigate('/success');
-        } catch (error) {
-          alert('Payment verification failed.');
-        }
-      },
-      prefill: {
-        name: user?.name,
-        email: user?.email,
-      },
-      theme: { color: '#059669' }
-    };
-    
-    const rzp = new window.Razorpay(options);
-    rzp.open();
+    try {
+      const orderRes = await api.post('/payments/create-order', { amount, appointmentId });
+      const order = orderRes.data.order;
+
+      const options = {
+        key: 'rzp_test_TOlHjo5HTdStDQ',
+        amount: amount * 100,
+        currency: 'INR',
+        name: 'MediSlot Hospital',
+        description: 'Appointment Booking',
+        order_id: order.id,
+        handler: async function (response) {
+          try {
+            await api.post('/payments/verify', {
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+              appointmentId
+            });
+            navigate('/success');
+          } catch (error) {
+            alert('Payment verification failed.');
+          }
+        },
+        prefill: {
+          name: user?.name,
+          email: user?.email,
+        },
+        theme: { color: '#059669' }
+      };
+      
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (error) {
+      console.error(error);
+      alert('Error creating payment order');
+    }
   };
 
-  if (loading) return <div style={{ padding: '4rem', textAlign: 'center' }}>Loading slots...</div>;
+  if (!doctorInfo) return <div style={{ padding: '4rem', textAlign: 'center' }}>Loading doctor info...</div>;
 
   return (
     <div style={{ background: '#f0f9ff', minHeight: 'calc(100vh - 70px)', padding: '3rem 2rem' }}>
@@ -116,23 +124,38 @@ export default function DoctorSlots() {
         )}
 
         <div style={{ padding: '2rem', background: 'white', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }}>
-          <h2 style={{ color: '#0369a1', marginBottom: '1.5rem', textAlign: 'center' }}>Available Time Slots for Today</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2rem' }}>
+            <h2 style={{ color: '#0369a1', margin: '0 0 1rem 0' }}>
+              {selectedDate ? 'Available Time Slots' : 'Select a Date for your Appointment'}
+            </h2>
+            <input 
+              type="date" 
+              value={selectedDate} 
+              onChange={(e) => setSelectedDate(e.target.value)} 
+              min={new Date().toISOString().split('T')[0]}
+              style={{ padding: '0.75rem 1.5rem', border: '2px solid #0284c7', borderRadius: '12px', outline: 'none', fontSize: '1.1rem', color: '#0369a1', fontWeight: 'bold' }}
+            />
+          </div>
           
-          {slots.length === 0 ? (
-            <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No slots available right now. Please try again later.</p>
-          ) : (
-            <div className="grid grid-cols-4">
-              {slots.map((slot, i) => (
-                <div key={i} className="card" style={{ padding: '1rem', textAlign: 'center', background: '#f0f9ff', border: '1px solid #7dd3fc', cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = '#e0f2fe'} onMouseLeave={(e) => e.currentTarget.style.background = '#f0f9ff'}>
-                  <p style={{ margin: '0 0 0.75rem 0', fontWeight: 'bold', color: '#0369a1', fontSize: '1.1rem' }}>
-                    {new Date(slot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                  <button className="btn" onClick={() => bookSlot(slot._id, slot.startTime, slot.endTime)} style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', width: '100%', background: '#0284c7' }}>
-                    Book & Pay
-                  </button>
-                </div>
-              ))}
-            </div>
+          {selectedDate && (
+            loading ? (
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>Loading slots...</p>
+            ) : slots.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No slots available for this date. Please try another date.</p>
+            ) : (
+              <div className="grid grid-cols-4">
+                {slots.map((slot, i) => (
+                  <div key={i} className="card" style={{ padding: '1rem', textAlign: 'center', background: '#f0f9ff', border: '1px solid #7dd3fc', cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = '#e0f2fe'} onMouseLeave={(e) => e.currentTarget.style.background = '#f0f9ff'}>
+                    <p style={{ margin: '0 0 0.75rem 0', fontWeight: 'bold', color: '#0369a1', fontSize: '1.1rem' }}>
+                      {new Date(slot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                    <button className="btn" onClick={() => bookSlot(slot._id, slot.startTime, slot.endTime)} style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', width: '100%', background: '#0284c7' }}>
+                      Book & Pay
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )
           )}
         </div>
       </div>

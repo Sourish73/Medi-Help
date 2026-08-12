@@ -21,13 +21,13 @@ export default function Auth() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Since api.js already has the baseURL http://localhost:5000/api, we just need to append the rest
+      
       const endpoint = isLogin ? '/auth/login' : '/auth/register';
       const res = await api.post(endpoint, formData);
       
       const { token, ...userData } = res.data.data;
       dispatch(loginSuccess({ user: userData, token }));
-      // React Router will automatically redirect based on the 'role' in App.jsx
+      
     } catch (error) {
       console.error(error);
       alert(error.response?.data?.message || 'Something went wrong');

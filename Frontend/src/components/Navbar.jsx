@@ -21,18 +21,21 @@ export default function Navbar() {
 
         <div className="navbar-links" style={{ gap: '1rem' }}>
           <Link to="/" className="nav-link" style={{ background: '#f3f4f6', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold' }}>Home</Link>
-          <Link to="/doctors" className="nav-link" style={{ background: '#f3f4f6', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold' }}>Doctors</Link>
+          <Link to="/doctors" className="nav-link" style={{ background: '#f3f4f6', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold' }}>Services</Link>
         </div>
 
         <div className="navbar-actions">
           {role === 'patient' && (
             <Link to="/book" className="btn btn-outline" style={{ marginRight: '1.5rem' }}>
-              Book A Appointment
+              Book & Appointment
             </Link>
           )}
 
           {isAuthenticated ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <Link to={role === 'doctor' ? '/doctor' : '/patient'} style={{ background: '#e0e7ff', padding: '0.5rem 1rem', borderRadius: '8px', textDecoration: 'none', color: '#3730a3', fontWeight: 'bold' }}>
+                My Appointments
+              </Link>
               <Link to="/profile" style={{ background: '#fef3c7', padding: '0.5rem 1rem', borderRadius: '8px', textDecoration: 'none', color: '#92400e', fontWeight: 'bold' }}>
                 Profile
               </Link>

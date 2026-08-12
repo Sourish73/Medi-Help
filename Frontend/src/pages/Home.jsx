@@ -20,17 +20,17 @@ export default function Home() {
       <div className="services-section">
         <h2 style={{ textAlign: 'center', marginBottom: '2rem' }}>Our Services</h2>
         <div className="grid grid-cols-3 container">
-          <div className="card text-center">
-            <h3>24/7 Emergency</h3>
-            <p>Always here when you need us most.</p>
+          <div className="card text-center" style={{ background: '#fee2e2', border: '1px solid #f87171', borderRadius: '12px', boxShadow: '0 4px 6px rgba(248,113,113,0.1)' }}>
+            <h3 style={{ color: '#b91c1c' }}>🚨 24/7 Emergency</h3>
+            <p style={{ color: '#7f1d1d' }}>Always here when you need us most.</p>
           </div>
-          <div className="card text-center">
-            <h3>Expert Doctors</h3>
-            <p>Top specialists from around the world.</p>
+          <div className="card text-center" style={{ background: '#e0f2fe', border: '1px solid #38bdf8', borderRadius: '12px', boxShadow: '0 4px 6px rgba(56,189,248,0.1)' }}>
+            <h3 style={{ color: '#0369a1' }}>👨‍⚕️ Expert Doctors</h3>
+            <p style={{ color: '#0c4a6e' }}>Top specialists from around the world.</p>
           </div>
-          <div className="card text-center">
-            <h3>Modern Facilities</h3>
-            <p>State of the art technology.</p>
+          <div className="card text-center" style={{ background: '#dcfce7', border: '1px solid #4ade80', borderRadius: '12px', boxShadow: '0 4px 6px rgba(74,222,128,0.1)' }}>
+            <h3 style={{ color: '#15803d' }}>🏥 Modern Facilities</h3>
+            <p style={{ color: '#14532d' }}>State of the art technology.</p>
           </div>
         </div>
       </div>
