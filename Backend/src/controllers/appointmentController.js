@@ -46,6 +46,7 @@ const getAvailableSlots = async (req, res) => {
       data: availableSlots,
     });
   } catch (error) {
+    console.error('Error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -55,18 +56,28 @@ const bookAppointment = async (req, res) => {
   try {
     const { doctorId, startTime, endTime } = req.body;
 
-    const doctorProfile = await DoctorProfile.findOne({ user: doctorId });
+    // Flexible lookup supporting both User ID and DoctorProfile ID
+    const doctorProfile = await DoctorProfile.findOne({
+      $or: [{ _id: doctorId }, { user: doctorId }]
+    });
+    
     if (!doctorProfile) {
       return res.status(404).json({ success: false, message: 'Doctor not found' });
     }
 
-    
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(400).json({ success: false, message: 'Invalid startTime or endTime format' });
+    }
+
     let slot = await Slot.findOneAndUpdate(
       {
-        doctor: doctorId,
-        startTime: new Date(startTime),
-        endTime: new Date(endTime),
-        status: { $ne: 'BOOKED' }, // Race condition guard: ensures slot isn't already booked
+        doctor: doctorProfile.user, 
+        startTime: start,
+        endTime: end,
+        status: { $ne: 'BOOKED' },
       },
       {
         $set: {
@@ -77,14 +88,13 @@ const bookAppointment = async (req, res) => {
       { new: true, upsert: true }
     );
 
-    // Create the associated appointment record
     const appointment = await Appointment.create({
       patient: req.user._id,
-      doctor: doctorId,
+      doctor: doctorProfile.user,
       slot: slot._id,
       amount: doctorProfile.fees,
       status: 'CONFIRMED',
-      paymentStatus: 'PAID', 
+      paymentStatus: 'PAID',
     });
 
     res.status(201).json({
@@ -92,7 +102,7 @@ const bookAppointment = async (req, res) => {
       data: appointment,
     });
   } catch (error) {
-   
+    console.error('Error:', error.message);
     if (error.code === 11000) {
       return res.status(409).json({
         success: false,
@@ -113,6 +123,7 @@ const getDoctorAppointments = async (req, res) => {
 
     res.status(200).json({ success: true, count: appointments.length, data: appointments });
   } catch (error) {
+    console.error('Error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -127,6 +138,7 @@ const getPatientAppointments = async (req, res) => {
 
     res.status(200).json({ success: true, count: appointments.length, data: appointments });
   } catch (error) {
+    console.error('Error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -159,6 +171,7 @@ const cancelAppointment = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Appointment cancelled and slot released', data: appointment });
   } catch (error) {
+    console.error('Error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -181,6 +194,7 @@ const completeAppointment = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Appointment marked as completed', data: appointment });
   } catch (error) {
+    console.error('Error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };

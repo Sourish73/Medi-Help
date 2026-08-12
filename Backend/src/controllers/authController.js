@@ -4,9 +4,11 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '7d',
-  });
+  const secret = process.env.JWT_SECRET || 'your_super_secret_jwt_key_here';
+  
+  const token = jwt.sign({ id }, secret, { expiresIn: '7d' });
+  console.log('Generated Token:', token);
+  return token;
 };
 
 const register = async (req, res) => {
@@ -58,6 +60,7 @@ const register = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error('Error:', error.message);
     res.status(500).json({ message: error.message });
   }
 };
@@ -95,6 +98,7 @@ const login = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error('Error:', error.message);
     res.status(500).json({ message: error.message });
   }
 };

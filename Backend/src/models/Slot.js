@@ -36,7 +36,10 @@ const slotSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Compound Index
+// Compound Index for fast queries
 slotSchema.index({ doctor: 1, startTime: 1, status: 1 });
+
+// TTL Index
+slotSchema.index({ lockedUntil: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model('Slot', slotSchema);

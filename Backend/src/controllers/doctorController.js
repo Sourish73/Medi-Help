@@ -31,6 +31,7 @@ const updateProfile = async (req, res) => {
     profile = await DoctorProfile.create(profileFields);
     res.status(201).json({ success: true, data: profile });
   } catch (error) {
+    console.error('Error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -52,6 +53,7 @@ const getAllDoctors = async (req, res) => {
 
     res.status(200).json({ success: true, count: doctors.length, data: doctors });
   } catch (error) {
+    console.error('Error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -70,6 +72,7 @@ const getDoctorById = async (req, res) => {
 
     res.status(200).json({ success: true, data: doctor });
   } catch (error) {
+    console.error('Error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -92,6 +95,7 @@ const changeAvailability = async (req, res) => {
       data: { isAvailable: doctorProfile.isAvailable },
     });
   } catch (error) {
+    console.error('Error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -131,6 +135,7 @@ const doctorDashboard = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error('Error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };

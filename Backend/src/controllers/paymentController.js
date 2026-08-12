@@ -20,6 +20,7 @@ const createOrder = async (req, res) => {
       order,
     });
   } catch (error) {
+    console.error('Error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -58,6 +59,7 @@ const verifyPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid payment signature verification failed' });
     }
   } catch (error) {
+    console.error('Error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
