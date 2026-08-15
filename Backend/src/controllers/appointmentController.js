@@ -81,8 +81,9 @@ const bookAppointment = async (req, res) => {
       },
       {
         $set: {
-          status: 'BOOKED',
+          status: 'LOCKED',
           lockedBy: req.user._id,
+          lockedUntil: new Date(Date.now() + 15 * 60 * 1000) // 15 mins lock
         },
       },
       { new: true, upsert: true }
@@ -93,8 +94,8 @@ const bookAppointment = async (req, res) => {
       doctor: doctorProfile.user,
       slot: slot._id,
       amount: doctorProfile.fees,
-      status: 'CONFIRMED',
-      paymentStatus: 'PAID',
+      status: 'PENDING',
+      paymentStatus: 'UNPAID',
     });
 
     res.status(201).json({

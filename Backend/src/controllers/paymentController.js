@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const razorpayInstance = require('../config/razorpay');
 const Appointment = require('../models/Appointment');
-
+const Slot = require('../models/Slot');
 
 const createOrder = async (req, res) => {
   try {
@@ -49,6 +49,12 @@ const verifyPayment = async (req, res) => {
         },
         { new: true }
       );
+
+      // Update the slot to BOOKED and unset lockedUntil
+      await Slot.findByIdAndUpdate(appointment.slot, {
+        $set: { status: 'BOOKED' },
+        $unset: { lockedUntil: 1 }
+      });
 
       return res.status(200).json({
         success: true,
