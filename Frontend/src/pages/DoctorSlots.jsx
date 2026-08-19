@@ -10,7 +10,12 @@ export default function DoctorSlots() {
   
   const [slots, setSlots] = useState([]);
   const [doctorInfo, setDoctorInfo] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  // AI States
+  const [aiSummary, setAiSummary] = useState('');
+  const [aiChecklist, setAiChecklist] = useState([]);
+  const [aiLoading, setAiLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState('');
 
   useEffect(() => {
@@ -23,13 +28,19 @@ export default function DoctorSlots() {
 
   const fetchDoctorInfo = async () => {
     try {
-      // In a real app we'd fetch specific doctor info, but for now we'll fetch all and filter 
-      // since there isn't a getDoctorById endpoint readily available in this context.
       const res = await api.get('/doctors');
       const doc = res.data.data.find(d => d.user?._id === doctorId);
       setDoctorInfo(doc);
+      
+      // Fetch AI content in parallel once we have the doctor info
+      if (doc) {
+        api.get(`/ai/checklist/${doc.specialization}`)
+           .then(r => setAiChecklist(r.data.data))
+           .finally(() => setAiLoading(false));
+      }
     } catch (error) {
       console.error(error);
+      setAiLoading(false);
     }
   };
 
@@ -113,13 +124,30 @@ export default function DoctorSlots() {
         </button>
 
         {doctorInfo && (
-          <div className="card" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', background: 'white', marginBottom: '2rem' }}>
-             <img src="/doctor_avatar.jpg" alt="Doctor" style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }} />
-             <div>
-                <h2 style={{ color: '#0369a1', margin: '0 0 0.25rem 0' }}>{doctorInfo.user?.name}</h2>
-                <p style={{ margin: '0 0 0.25rem 0', color: '#475569' }}>{doctorInfo.specialization}</p>
-                <p style={{ margin: '0' }}>Consultation Fee: <strong>₹{doctorInfo.fees}</strong></p>
+          <div className="card" style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start', background: 'white', marginBottom: '2rem', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+             <img src="/doctor_avatar.jpg" alt="Doctor" style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #e0f2fe' }} />
+             <div style={{ flex: 1 }}>
+                <h2 style={{ color: '#0369a1', margin: '0 0 0.5rem 0', fontSize: '1.8rem' }}>{doctorInfo.user?.name}</h2>
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem' }}>
+                  <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 12px', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 'bold' }}>{doctorInfo.specialization}</span>
+                  <span style={{ background: '#ecfdf5', color: '#059669', padding: '4px 12px', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 'bold' }}>₹{doctorInfo.fees} / Consultation</span>
+                </div>
              </div>
+          </div>
+        )}
+
+        {/* AI Pre-Appointment Checklist */}
+        {!aiLoading && aiChecklist.length > 0 && (
+          <div className="card" style={{ background: 'linear-gradient(to right, #ffffff, #f0fdf4)', marginBottom: '2rem', padding: '1.5rem', borderRadius: '16px', border: '1px solid #bbf7d0' }}>
+            <h3 style={{ color: '#059669', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>📋</span> AI Pre-Appointment Checklist
+            </h3>
+            <p style={{ color: '#475569', fontSize: '0.9rem', marginBottom: '1rem' }}>How to prepare for your {doctorInfo?.specialization} consultation:</p>
+            <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#334155' }}>
+              {aiChecklist.map((tip, idx) => (
+                <li key={idx} style={{ marginBottom: '0.5rem' }}>{tip}</li>
+              ))}
+            </ul>
           </div>
         )}
 

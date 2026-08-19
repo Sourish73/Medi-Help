@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create a centralized axios instance
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', // Point to your backend
+  baseURL: 'http://localhost:5000/api', 
 });
 
 // Add a request interceptor to automatically attach the token

@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Navbar from './components/Navbar';
+import ChatAssistant from './components/ChatAssistant';
 import Home from './pages/Home';
 import Auth from './pages/Auth';
 import Booking from './pages/Booking';
@@ -35,6 +36,7 @@ function App() {
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>
+        <ChatAssistant />
       </div>
     </Router>
   );
