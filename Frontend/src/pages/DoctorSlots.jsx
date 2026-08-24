@@ -79,21 +79,6 @@ export default function DoctorSlots() {
       const orderRes = await api.post('/payments/create-order', { amount, appointmentId });
       const order = orderRes.data.order;
 
-      if (order.isMock || order.id.startsWith('mock_')) {
-        try {
-          await api.post('/payments/verify', {
-            razorpay_order_id: order.id,
-            razorpay_payment_id: 'mock_payment_id_' + Date.now(),
-            razorpay_signature: 'mock_signature',
-            appointmentId
-          });
-          navigate('/success');
-        } catch {
-          setToast({ message: 'Payment verification failed', type: 'error' });
-        }
-        return;
-      }
-
       const options = {
         key: 'rzp_test_TOlHjo5HTdStDQ',
         amount: amount * 100,
