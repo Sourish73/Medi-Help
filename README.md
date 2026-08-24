@@ -1,42 +1,55 @@
-# Medi-Help
+# 🏥 Medi-Help
 
-### 🔗 Live Application: [https://medi-help-frontend.onrender.com](https://medi-help-frontend.onrender.com)
+<p align="center">
+  <img src="https://img.shields.io/badge/status-active-success.svg" alt="Status" />
+  <img src="https://img.shields.io/badge/platform-node--js-orange.svg" alt="Platform" />
+  <img src="https://img.shields.io/badge/frontend-react--vite-yellow.svg" alt="Frontend" />
+  <img src="https://img.shields.io/badge/database-mongodb-green.svg" alt="Database" />
+  <img src="https://img.shields.io/badge/ai--integration-groq-blue.svg" alt="AI Integration" />
+</p>
+
+---
+
+### 🔗 Live Hosted Application: [https://medi-help-frontend.onrender.com](https://medi-help-frontend.onrender.com)
 ### 🔗 Live API Backend: [https://medi-help-backend.onrender.com](https://medi-help-backend.onrender.com)
 
 A next-generation healthcare scheduling platform featuring patient symptom intake, AI-driven pre-visit assessments, doctor leave conflict resolution, automated email notifications, and Google Calendar integration. Built with a sleek, light-yellow glassmorphism UI.
 
-## Project Deliverables Reference
-- **Hosted Frontend:** [https://medi-help-frontend.onrender.com](https://medi-help-frontend.onrender.com)
-- **Hosted Backend API:** [https://medi-help-backend.onrender.com](https://medi-help-backend.onrender.com)
-- **System Design Write-Up:** Available in [`SYSTEM_DESIGN.md`](./SYSTEM_DESIGN.md).
-- **Environment Template:** Available in [`Backend/.env.example`](./Backend/.env.example).
-- **Source Code Archive:** Built at `C:\Users\sinha\OneDrive\Documents\Desktop\Medi-Help.zip`.
+---
+
+## ⚡ Core Highlights
+
+*   **Double-Booking Prevention:** Atomic locking mechanism using MongoDB `findOneAndUpdate` to prevent slot conflicts under high concurrency.
+*   **Leave Management:** Automated cancellation, slot release, and patient email alerts when doctors register leave.
+*   **AI-Intake Summaries:** Pre-visit symptom assessments (determining urgency levels and chief complaints) and post-visit patient-friendly summaries powered by Groq (Qwen 3.6 27B).
+*   **Medication Reminders:** Background cron utility scanning completed prescriptions to issue recurring emails.
+*   **Google Calendar Sync:** Automated event mapping via OAuth 2.0.
 
 ---
 
-## 1. Setup & Installation Guide
+## 🛠️ Getting Started & Setup
 
-### Prerequisites
+### ⚙️ Prerequisites
 - Node.js (v16 or higher)
 - MongoDB Atlas cluster (or local MongoDB community server)
 - Groq API Key (for Qwen 3.6 27B model)
 
-### Installation Steps
+### 📂 Installation Steps
 
-1. Clone the repository and navigate to the project directory:
+1. **Clone the repository:**
    ```bash
    git clone https://github.com/Sourish73/Medi-Help.git
    cd Medi-Help
    ```
 
-2. Configure backend environment:
+2. **Configure backend environment:**
    ```bash
    cd Backend
    cp .env.example .env
    ```
    Provide your specific database strings and API keys inside the newly created `.env` file.
 
-3. Install dependencies and start servers:
+3. **Install dependencies and start servers:**
    ```bash
    # In Backend directory
    npm install
@@ -48,7 +61,7 @@ A next-generation healthcare scheduling platform featuring patient symptom intak
    npm run dev
    ```
 
-4. Seed default doctor profiles and administrator credentials:
+4. **Seed default data:**
    ```bash
    # In Backend directory
    node src/seedDoctors.js
@@ -57,74 +70,7 @@ A next-generation healthcare scheduling platform featuring patient symptom intak
 
 ---
 
-## 2. Database Schema
-
-The platform uses four MongoDB collections with strict Mongoose validation:
-
-### User Collection
-- `name` (String, required): Profile name.
-- `email` (String, required, unique, lowercase): User email index.
-- `password` (String, required, select: false): Bcrypt hashed password.
-- `role` (String, enum: ['patient', 'doctor', 'admin']): User access control level.
-- `phone` (String, required): Validated 10-digit number.
-
-### DoctorProfile Collection
-- `user` (ObjectId, ref: 'User', required): Links to user collection.
-- `specialization` (String, required): Medical specialty area.
-- `fees` (Number, required): Consultation fee amount.
-- `experienceYears` (Number, required): Years of expertise.
-- `workingHours` (Object): `{ start: "09:00", end: "17:00" }` format.
-- `slotDurationMinutes` (Number, default: 30): Appointment block length.
-- `leaveDays` (Array of Strings): Dates in YYYY-MM-DD format.
-- `isAvailable` (Boolean, default: true): Temporary online/offline status flag.
-
-### Slot Collection
-- `doctor` (ObjectId, ref: 'User', required): Associated provider.
-- `startTime` (Date, required): Beginning of appointment.
-- `endTime` (Date, required): End of appointment.
-- `status` (String, enum: ['AVAILABLE', 'LOCKED', 'BOOKED']): Scheduling states.
-- `lockedBy` (ObjectId, ref: 'User'): Lock owner user reference.
-- `lockedUntil` (Date): Timestamp when temporary hold expires.
-
-### Appointment Collection
-- `patient` (ObjectId, ref: 'User', required)
-- `doctor` (ObjectId, ref: 'User', required)
-- `slot` (ObjectId, ref: 'Slot', required)
-- `amount` (Number, required): Booking cost value.
-- `status` (String, enum: ['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'])
-- `paymentStatus` (String, enum: ['UNPAID', 'PAID'])
-- `symptoms` (String): Intake symptoms text.
-- `preVisitSummary` (Object): `{ urgency, chiefComplaint, suggestedQuestions }`
-- `postVisitSummary` (String): Patient-friendly clinical breakdown.
-- `clinicalNotes` (String): Professional notes from the doctor.
-- `prescription` (String): Medication guidelines.
-- `calendarEventId` (String): Google Calendar tracking ID reference.
-
----
-
-## 3. LLM Prompts Configuration
-
-The platform utilizes Groq's open model infrastructure to handle natural language processing:
-
-### Pre-Visit Symptom Summary Prompt
-- **Trigger:** Initiated during the check-out transaction.
-- **Model:** `qwen/qwen3.6-27b`
-- **System Prompt:**
-  ```text
-  Analyse these symptoms and return a JSON object with: urgency level (Low / Medium / High), chief complaint, and three suggested questions for the doctor. Symptoms: <symptoms>
-  ```
-
-### Post-Visit Patient-Friendly Summary Prompt
-- **Trigger:** Submitted when a doctor completes a session.
-- **Model:** `qwen/qwen3.6-27b`
-- **System Prompt:**
-  ```text
-  Convert these clinical notes into a patient-friendly summary with medication schedule and follow-up steps: <notes>
-  ```
-
----
-
-## 4. Google Calendar API OAuth Setup Steps
+## 📅 Google Calendar API OAuth Setup
 
 To link appointments to Google Calendar events for both doctors and patients, follow these steps:
 
@@ -148,22 +94,50 @@ To link appointments to Google Calendar events for both doctors and patients, fo
 
 ---
 
-## 5. API Documentation
+## 🧩 Database Schema
 
-### Auth Module
-- `POST /api/auth/register` - Create user / doctor profiles.
-- `POST /api/auth/login` - Authenticate account and retrieve JWT tokens.
+The platform uses four MongoDB collections with strict Mongoose validation:
 
-### Scheduling Module
-- `GET /api/appointments/available-slots/:doctorId?date=YYYY-MM-DD` - Query unbooked slots.
-- `POST /api/appointments/book` - Place a 15-minute lock hold on a slot.
-- `GET /api/appointments/patient` - List patient appointments.
-- `GET /api/appointments/doctor` - List doctor appointments.
-- `PATCH /api/appointments/:id/cancel` - Cancel appointment and release the slot.
-- `PATCH /api/appointments/:id/complete` - Mark complete, add clinical notes, and generate AI patient summaries.
+| Collection | Key Fields | Purpose |
+| :--- | :--- | :--- |
+| **User** | `name`, `email`, `password`, `role`, `phone` | Authentication & role-based profiles |
+| **DoctorProfile** | `user`, `specialization`, `fees`, `experienceYears`, `workingHours`, `slotDurationMinutes`, `leaveDays`, `isAvailable` | Stores scheduling metrics & leaves |
+| **Slot** | `doctor`, `startTime`, `endTime`, `status`, `lockedBy`, `lockedUntil` | Coordinates atomicity & lock states |
+| **Appointment** | `patient`, `doctor`, `slot`, `amount`, `status`, `paymentStatus`, `symptoms`, `preVisitSummary`, `postVisitSummary`, `clinicalNotes`, `prescription`, `calendarEventId` | Connects bookings and AI-summaries |
 
-### Admin Module
-- `POST /api/doctors/admin` - Register a new doctor.
-- `PUT /api/doctors/admin/:id` - Update working hours, slot durations, and leave dates.
-- `GET /api/doctors/admin/list` - List registered doctors.
-- `DELETE /api/doctors/admin/:id` - Delete doctor profile.
+---
+
+## 🤖 LLM Prompts Configuration
+
+The platform utilizes Groq's open model infrastructure to handle natural language processing:
+
+### Pre-Visit Symptom Summary Prompt
+- **Trigger:** Initiated during the check-out transaction.
+- **Model:** `qwen/qwen3.6-27b`
+- **Prompt Structure:**
+  > "Analyse these symptoms and return a JSON object with: urgency level (Low / Medium / High), chief complaint, and three suggested questions for the doctor. Symptoms: `<symptoms>`"
+
+### Post-Visit Patient-Friendly Summary Prompt
+- **Trigger:** Submitted when a doctor completes a session.
+- **Model:** `qwen/qwen3.6-27b`
+- **Prompt Structure:**
+  > "Convert these clinical notes into a patient-friendly summary with medication schedule and follow-up steps: `<notes>`"
+
+---
+
+## 📡 API Documentation
+
+| Module | Method & Endpoint | Description |
+| :--- | :--- | :--- |
+| **Auth** | `POST /api/auth/register` | Create user or doctor account profiles |
+| **Auth** | `POST /api/auth/login` | Authenticate account & retrieve JWT token |
+| **Scheduling** | `GET /api/appointments/available-slots/:doctorId?date=YYYY-MM-DD` | Query list of unbooked doctor slots |
+| **Scheduling** | `POST /api/appointments/book` | Place a 15-minute lock hold on slot and register booking |
+| **Scheduling** | `GET /api/appointments/patient` | Retrieve logged-in patient bookings |
+| **Scheduling** | `GET /api/appointments/doctor` | Retrieve logged-in doctor appointments |
+| **Scheduling** | `PATCH /api/appointments/:id/cancel` | Cancel booking and release the slot |
+| **Scheduling** | `PATCH /api/appointments/:id/complete` | Close appointment, write prescriptions & trigger AI post-summary |
+| **Admin** | `POST /api/doctors/admin` | Register a new doctor account |
+| **Admin** | `PUT /api/doctors/admin/:id` | Update doctor specialties, slot details & leaves |
+| **Admin** | `GET /api/doctors/admin/list` | List all doctors in system |
+| **Admin** | `DELETE /api/doctors/admin/:id` | Remove doctor profile |
