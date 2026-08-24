@@ -1,13 +1,15 @@
 const Appointment = require('../models/Appointment');
 const Slot = require('../models/Slot');
 const DoctorProfile = require('../models/DoctorProfile');
+const User = require('../models/User');
 const { generateAvailableSlots } = require('../utils/slotCalculator');
-
+const { generatePreVisitSummary, generatePostVisitSummary } = require('./aiController');
+const { sendEmail, handleCalendarEvent } = require('../utils/notificationService');
 
 const getAvailableSlots = async (req, res) => {
   try {
     const { doctorId } = req.params;
-    const { date } = req.query; //  YYYY-MM-DD
+    const { date } = req.query;
 
     if (!date) {
       return res.status(400).json({ success: false, message: 'Date parameter is required' });
@@ -18,11 +20,20 @@ const getAvailableSlots = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Doctor profile not found' });
     }
 
-    // Working Window
-    const shiftStart = new Date(`${date}T09:00:00.000Z`);
-    const shiftEnd = new Date(`${date}T17:00:00.000Z`);
+    if (doctorProfile.leaveDays && doctorProfile.leaveDays.includes(date)) {
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        data: [],
+      });
+    }
 
-    // Targeted Date fetch Data
+    const startHour = (doctorProfile.workingHours && doctorProfile.workingHours.start) || '09:00';
+    const endHour = (doctorProfile.workingHours && doctorProfile.workingHours.end) || '17:00';
+
+    const shiftStart = new Date(`${date}T${startHour}:00.000Z`);
+    const shiftEnd = new Date(`${date}T${endHour}:00.000Z`);
+
     const startOfDay = new Date(`${date}T00:00:00.000Z`);
     const endOfDay = new Date(`${date}T23:59:59.999Z`);
 
@@ -32,7 +43,6 @@ const getAvailableSlots = async (req, res) => {
       status: { $in: ['BOOKED', 'LOCKED'] },
     });
 
-    
     const availableSlots = generateAvailableSlots(
       shiftStart,
       shiftEnd,
@@ -46,17 +56,14 @@ const getAvailableSlots = async (req, res) => {
       data: availableSlots,
     });
   } catch (error) {
-    console.error('Error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-
 const bookAppointment = async (req, res) => {
   try {
-    const { doctorId, startTime, endTime } = req.body;
+    const { doctorId, startTime, endTime, symptoms } = req.body;
 
-    // Flexible lookup supporting both User ID and DoctorProfile ID
     const doctorProfile = await DoctorProfile.findOne({
       $or: [{ _id: doctorId }, { user: doctorId }]
     });
@@ -72,6 +79,11 @@ const bookAppointment = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid startTime or endTime format' });
     }
 
+    const leaveDateStr = start.toISOString().split('T')[0];
+    if (doctorProfile.leaveDays && doctorProfile.leaveDays.includes(leaveDateStr)) {
+      return res.status(400).json({ success: false, message: 'Doctor is on leave on this date' });
+    }
+
     let slot = await Slot.findOneAndUpdate(
       {
         doctor: doctorProfile.user, 
@@ -83,11 +95,13 @@ const bookAppointment = async (req, res) => {
         $set: {
           status: 'LOCKED',
           lockedBy: req.user._id,
-          lockedUntil: new Date(Date.now() + 15 * 60 * 1000) // 15 mins lock
+          lockedUntil: new Date(Date.now() + 15 * 60 * 1000)
         },
       },
-      { new: true, upsert: true }
+      { returnDocument: 'after', upsert: true }
     );
+
+    const preVisitSum = await generatePreVisitSummary(symptoms || 'Routine checkup');
 
     const appointment = await Appointment.create({
       patient: req.user._id,
@@ -96,6 +110,8 @@ const bookAppointment = async (req, res) => {
       amount: doctorProfile.fees,
       status: 'PENDING',
       paymentStatus: 'UNPAID',
+      symptoms: symptoms || '',
+      preVisitSummary: preVisitSum,
     });
 
     res.status(201).json({
@@ -103,7 +119,6 @@ const bookAppointment = async (req, res) => {
       data: appointment,
     });
   } catch (error) {
-    console.error('Error:', error.message);
     if (error.code === 11000) {
       return res.status(409).json({
         success: false,
@@ -114,7 +129,6 @@ const bookAppointment = async (req, res) => {
   }
 };
 
-
 const getDoctorAppointments = async (req, res) => {
   try {
     const appointments = await Appointment.find({ doctor: req.user._id })
@@ -124,11 +138,9 @@ const getDoctorAppointments = async (req, res) => {
 
     res.status(200).json({ success: true, count: appointments.length, data: appointments });
   } catch (error) {
-    console.error('Error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 const getPatientAppointments = async (req, res) => {
   try {
@@ -139,24 +151,21 @@ const getPatientAppointments = async (req, res) => {
 
     res.status(200).json({ success: true, count: appointments.length, data: appointments });
   } catch (error) {
-    console.error('Error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-
 const cancelAppointment = async (req, res) => {
   try {
-    const appointment = await Appointment.findById(req.params.id);
+    const appointment = await Appointment.findById(req.params.id).populate('doctor').populate('patient').populate('slot');
 
     if (!appointment) {
       return res.status(404).json({ success: false, message: 'Appointment not found' });
     }
 
-    // Authorization check
     if (
-      appointment.patient.toString() !== req.user._id.toString() &&
-      appointment.doctor.toString() !== req.user._id.toString()
+      appointment.patient._id.toString() !== req.user._id.toString() &&
+      appointment.doctor._id.toString() !== req.user._id.toString()
     ) {
       return res.status(403).json({ success: false, message: 'Not authorized to cancel this appointment' });
     }
@@ -164,22 +173,35 @@ const cancelAppointment = async (req, res) => {
     appointment.status = 'CANCELLED';
     await appointment.save();
 
-    // Release the corresponding slot so it becomes available again
-    await Slot.findByIdAndUpdate(appointment.slot, {
+    await Slot.findByIdAndUpdate(appointment.slot._id, {
       status: 'AVAILABLE',
       lockedBy: null,
     });
 
+    if (appointment.calendarEventId) {
+      await handleCalendarEvent('DELETE', appointment, appointment.doctor, appointment.patient);
+    }
+
+    await sendEmail(
+      appointment.patient.email,
+      'Appointment Cancelled',
+      `<h1>Appointment Cancelled</h1><p>Your appointment with Dr. ${appointment.doctor.name} on ${appointment.slot.startTime} has been cancelled.</p>`
+    );
+    await sendEmail(
+      appointment.doctor.email,
+      'Appointment Cancelled By Patient',
+      `<h1>Appointment Cancelled</h1><p>The appointment with patient ${appointment.patient.name} on ${appointment.slot.startTime} has been cancelled.</p>`
+    );
+
     res.status(200).json({ success: true, message: 'Appointment cancelled and slot released', data: appointment });
   } catch (error) {
-    console.error('Error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-
 const completeAppointment = async (req, res) => {
   try {
+    const { clinicalNotes, prescription } = req.body;
     const appointment = await Appointment.findById(req.params.id);
 
     if (!appointment) {
@@ -190,12 +212,16 @@ const completeAppointment = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Not authorized to perform this action' });
     }
 
+    const postVisitSum = await generatePostVisitSummary(clinicalNotes || '');
+
     appointment.status = 'COMPLETED';
+    appointment.clinicalNotes = clinicalNotes || '';
+    appointment.prescription = prescription || '';
+    appointment.postVisitSummary = postVisitSum;
     await appointment.save();
 
     res.status(200).json({ success: true, message: 'Appointment marked as completed', data: appointment });
   } catch (error) {
-    console.error('Error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };

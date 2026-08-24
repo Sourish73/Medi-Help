@@ -8,6 +8,7 @@ import Booking from './pages/Booking';
 import DoctorSlots from './pages/DoctorSlots';
 import PatientDashboard from './pages/PatientDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import Doctors from './pages/Doctors';
 import Success from './pages/Success';
 import Profile from './pages/Profile';
@@ -24,13 +25,14 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/doctors" element={<Doctors />} />
-            <Route path="/auth" element={!isAuthenticated ? <Auth /> : (role === 'doctor' ? <Navigate to="/doctor" /> : <Navigate to="/book" />)} />
+            <Route path="/auth" element={!isAuthenticated ? <Auth /> : (role === 'admin' ? <Navigate to="/admin" /> : (role === 'doctor' ? <Navigate to="/doctor" /> : <Navigate to="/book" />))} />
             
             <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/auth" />} />
             <Route path="/book" element={isAuthenticated && role === 'patient' ? <Booking /> : <Navigate to="/auth" />} />
             <Route path="/book/:doctorId" element={isAuthenticated && role === 'patient' ? <DoctorSlots /> : <Navigate to="/auth" />} />
             <Route path="/patient" element={isAuthenticated && role === 'patient' ? <PatientDashboard /> : <Navigate to="/auth" />} />
             <Route path="/doctor" element={isAuthenticated && role === 'doctor' ? <DoctorDashboard /> : <Navigate to="/auth" />} />
+            <Route path="/admin" element={isAuthenticated && role === 'admin' ? <AdminDashboard /> : <Navigate to="/auth" />} />
             <Route path="/success" element={isAuthenticated ? <Success /> : <Navigate to="/auth" />} />
             
             <Route path="*" element={<Navigate to="/" />} />

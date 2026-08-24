@@ -21,13 +21,10 @@ export default function Auth() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      
       const endpoint = isLogin ? '/auth/login' : '/auth/register';
       const res = await api.post(endpoint, formData);
-      
       const { token, ...userData } = res.data.data;
       dispatch(loginSuccess({ user: userData, token }));
-      
     } catch (error) {
       console.error(error);
       alert(error.response?.data?.message || 'Something went wrong');
@@ -52,11 +49,11 @@ export default function Auth() {
           </div>
         </div>
 
-        <h2 style={{ textAlign: 'center' }}>
+        <h2 style={{ textAlign: 'center', color: '#38bdf8' }}>
           {isLogin ? 'Welcome Back' : 'Create an Account'}
         </h2>
         
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
           {!isLogin && (
             <>
               <div className="form-group">

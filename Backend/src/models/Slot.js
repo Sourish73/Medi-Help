@@ -22,7 +22,6 @@ const slotSchema = new mongoose.Schema(
       default: 'AVAILABLE',
       index: true,
     },
-    // Used for temporary locking during checkout
     lockedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -36,10 +35,8 @@ const slotSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Compound Index for fast queries
 slotSchema.index({ doctor: 1, startTime: 1, status: 1 });
 
-// TTL Index
 slotSchema.index({ lockedUntil: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model('Slot', slotSchema);

@@ -10,18 +10,15 @@ const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/payments', paymentRoutes);  
 app.use('/api/ai', aiRoutes);
 
-// Health check
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Appointy API is running smoothly' });
 });

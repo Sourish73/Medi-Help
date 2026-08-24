@@ -20,25 +20,39 @@ export default function Navbar() {
         </Link>
 
         <div className="navbar-links" style={{ gap: '1rem' }}>
-          <Link to="/" className="nav-link" style={{ background: '#f3f4f6', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold' }}>Home</Link>
-          <Link to="/doctors" className="nav-link" style={{ background: '#f3f4f6', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold' }}>Services</Link>
+          <Link to="/" className="nav-link">Home</Link>
+          <Link to="/doctors" className="nav-link">Specialists</Link>
         </div>
 
         <div className="navbar-actions">
           {role === 'patient' && (
             <Link to="/book" className="btn btn-outline" style={{ marginRight: '1.5rem' }}>
-              Book & Appointment
+              Book Appointment
             </Link>
           )}
 
           {isAuthenticated ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <Link to={role === 'doctor' ? '/doctor' : '/patient'} style={{ background: '#e0e7ff', padding: '0.5rem 1rem', borderRadius: '8px', textDecoration: 'none', color: '#3730a3', fontWeight: 'bold' }}>
-                My Appointments
-              </Link>
-              <Link to="/profile" style={{ background: '#fef3c7', padding: '0.5rem 1rem', borderRadius: '8px', textDecoration: 'none', color: '#92400e', fontWeight: 'bold' }}>
-                Profile
-              </Link>
+              {role === 'admin' && (
+                <Link to="/admin" style={{ background: 'rgba(255,255,255,0.2)', padding: '0.5rem 1rem', borderRadius: '8px', textDecoration: 'none', color: '#059669', fontWeight: 'bold', border: '1px solid rgba(255,255,255,0.4)' }}>
+                  Admin Panel
+                </Link>
+              )}
+              {role === 'doctor' && (
+                <Link to="/doctor" style={{ background: 'rgba(255,255,255,0.2)', padding: '0.5rem 1rem', borderRadius: '8px', textDecoration: 'none', color: '#059669', fontWeight: 'bold', border: '1px solid rgba(255,255,255,0.4)' }}>
+                  Doctor Panel
+                </Link>
+              )}
+              {role === 'patient' && (
+                <Link to="/patient" style={{ background: 'rgba(255,255,255,0.2)', padding: '0.5rem 1rem', borderRadius: '8px', textDecoration: 'none', color: '#059669', fontWeight: 'bold', border: '1px solid rgba(255,255,255,0.4)' }}>
+                  My Bookings
+                </Link>
+              )}
+              {role !== 'admin' && (
+                <Link to="/profile" style={{ background: 'rgba(255,255,255,0.2)', padding: '0.5rem 1rem', borderRadius: '8px', textDecoration: 'none', color: '#0ea5e9', fontWeight: 'bold', border: '1px solid rgba(255,255,255,0.4)' }}>
+                  Profile
+                </Link>
+              )}
               <button className="btn" style={{ background: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }} onClick={handleLogout}>Logout</button>
             </div>
           ) : (
