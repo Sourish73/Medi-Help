@@ -3,6 +3,8 @@
 A next-generation healthcare scheduling platform featuring patient symptom intake, AI-driven pre-visit assessments, doctor leave conflict resolution, automated email notifications, and Google Calendar integration. Built with a sleek, light-yellow glassmorphism UI.
 
 ## Project Deliverables Reference
+- **Hosted Frontend:** [https://medi-help-frontend.onrender.com](https://medi-help-frontend.onrender.com)
+- **Hosted Backend API:** [https://medi-help-backend.onrender.com](https://medi-help-backend.onrender.com)
 - **System Design Write-Up:** Available in [`SYSTEM_DESIGN.md`](./SYSTEM_DESIGN.md).
 - **Environment Template:** Available in [`Backend/.env.example`](./Backend/.env.example).
 - **Source Code Archive:** Built at `C:\Users\sinha\OneDrive\Documents\Desktop\Medi-Help.zip`.
