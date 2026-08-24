@@ -1,5 +1,8 @@
 # Medi-Help
 
+### 🔗 Live Application: [https://medi-help-frontend.onrender.com](https://medi-help-frontend.onrender.com)
+### 🔗 Live API Backend: [https://medi-help-backend.onrender.com](https://medi-help-backend.onrender.com)
+
 A next-generation healthcare scheduling platform featuring patient symptom intake, AI-driven pre-visit assessments, doctor leave conflict resolution, automated email notifications, and Google Calendar integration. Built with a sleek, light-yellow glassmorphism UI.
 
 ## Project Deliverables Reference
